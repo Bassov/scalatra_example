@@ -34,14 +34,20 @@ class MyScalatraServlet() extends ScalatraServlet with JacksonJsonSupport {
     messages
   }
   
-  get("/message/:id") {
-    val id = params("id").toInt
+  def getParamId = params.getOrElse("id", halt(400)).toInt
+  def checkExistence(id: Int) = if (!messages.exists(_.id == id))
+      halt(404)
+  
+  get("/messages/:id") {
+    val id = getParamId
+    checkExistence(id)
     val msg = messages.find { _.id == id }
     msg.get
   }
   
-  put("/message/:id") {
-    val id = params("id").toInt
+  put("/messages/:id") {
+    val id = getParamId
+    checkExistence(id)
     val text = parsedBody.extract[Update].text
     val msgUpdate = Message(id, text)
     for ((msg, inx) <- messages.zipWithIndex) {
@@ -52,8 +58,9 @@ class MyScalatraServlet() extends ScalatraServlet with JacksonJsonSupport {
     messages
   }
   
-  delete("/message/:id") {
-    val id = params("id").toInt    
+  delete("/messages/:id") {
+    val id = getParamId
+    checkExistence(id)  
     messages = messages.filter { _.id != id }
     messages
   }
