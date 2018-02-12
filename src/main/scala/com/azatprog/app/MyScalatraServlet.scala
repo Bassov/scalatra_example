@@ -1,17 +1,18 @@
 package com.azatprog.app
 
+import com.mongodb.casbah.Imports._
+import com.mongodb.util.JSON
 import org.scalatra._
 // JSON-related libraries
 import org.json4s.{DefaultFormats, Formats}
 
 // JSON handling support from Scalatra
 import org.scalatra.json._
-import javafx.css.ParsedValue
 
 case class Update(text: String="")
 case class Message(id: Int=99, text:String="Default text")
 
-class MyScalatraServlet() extends ScalatraServlet with JacksonJsonSupport {
+class MyScalatraServlet(db: MongoDB) extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
   before() {
@@ -21,7 +22,7 @@ class MyScalatraServlet() extends ScalatraServlet with JacksonJsonSupport {
   var messages = List(Message(1, "Text 1"))
 
   get("/") {
-    views.html.hello()
+//    views.html.hello()
   }
 
   get("/messages") {
