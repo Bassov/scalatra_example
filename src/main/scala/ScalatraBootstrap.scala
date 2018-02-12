@@ -14,7 +14,7 @@ class ScalatraBootstrap extends LifeCycle {
 
     val server = new ServerAddress("localhost", 27017)
     val mongoClient = MongoClient(server)
-    val db = mongoClient("twit")
+    val db = mongoClient("twitter")
     context.mount(new MyScalatraServlet(db), "/*")
   }
 }
