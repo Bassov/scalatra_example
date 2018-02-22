@@ -21,6 +21,8 @@ case class User(id: Option[Int], email: String, nickname: String, password: Stri
 
 case class UserCreds(nickname: String, password: String)
 
+case class TokenValue(token: String)
+
 class MyScalatraServlet(db: MongoDB) extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
@@ -44,13 +46,25 @@ class MyScalatraServlet(db: MongoDB) extends ScalatraServlet with JacksonJsonSup
     JsonWebToken.validate(jwt, salt)
   }
 
+  private def auth(tokenValue: TokenValue) {
+    val nickname = parseTokenAndGetValue(tokenValue.token, "nickname")
+    val doc = db("users").findOne(MongoDBObject("nickname" -> nickname))
+    if (doc.isEmpty) {
+      halt(400)
+    }
+    if (!isValidToken(tokenValue.token, doc.get.getAs[String]("salt").get)) {
+      halt(401)
+    }
+    doc.get
+  }
+
   post("/login") {
     val user = parsedBody.extract[UserCreds]
     val doc = db("users").findOne(MongoDBObject("nickname" -> user.nickname, "password" -> user.password))
     if (doc.isDefined) {
       val token = genToken(user.nickname)
       doc.get("salt") = token._2
-      db("users").update(MongoDBObject("nickname" -> user.nickname), MongoDBObject("$set"-> MongoDBObject("salt"-> token._2)), false, true)
+      db("users").update(MongoDBObject("nickname" -> user.nickname), MongoDBObject("$set" -> MongoDBObject("salt" -> token._2)), false, true)
       MongoDBObject("code" -> 200, "token" -> token._1)
       //      new Object() {
       //        val code = 200
@@ -63,6 +77,31 @@ class MyScalatraServlet(db: MongoDB) extends ScalatraServlet with JacksonJsonSup
       //        val error = "User not found"
       //      }
     }
+  }
+
+  private def parseTokenAndGetValue(jwt: String, key: String): String = {
+    val claims: Option[Map[String, String]] = jwt match {
+      case JsonWebToken(header, claimsSet, signature) =>
+        claimsSet.asSimpleMap.toOption
+      case x =>
+        None
+    }
+    val parsedToken: Map[String, String] = claims match {
+      case Some(value) => value
+      case _ => Map.empty
+    }
+    if (parsedToken.isEmpty) {
+      ""
+    } else {
+      parsedToken(key)
+    }
+  }
+
+  post("/signout") {
+    val token = parsedBody.extract[TokenValue].token
+    val nickname = parseTokenAndGetValue(token, "nickname")
+    db("users").update(MongoDBObject("nickname" -> nickname), MongoDBObject("$set" -> MongoDBObject("salt" -> "")))
+    true
   }
 
   post("/register") {
