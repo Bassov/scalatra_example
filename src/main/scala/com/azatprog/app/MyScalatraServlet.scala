@@ -228,9 +228,11 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   //
   get("/feed") {
     val me = auth()
-    val feed = me.subscriptions
-      .flatMap(sub => tweets.filter(t => t.owner.id == sub.id))
-      .sortBy(_.date)
+    val feed: List[Tweet] = (me.subscriptions
+      .flatMap(sub => tweets.filter(t => t.owner.id == sub.id)) :::
+      tweets.filter(_.mentioned.contains(me))
+      ).sortBy(_.date)
+
     response(Map(
       "feed" -> feed.map(Tweet.map)
     ))
