@@ -128,11 +128,11 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
     val origTweetId = params.getOrElse("origTweet", throw HTTPException(400, "Missing parameter origTweet"))
     try {
-      val origTweet = TweetData.getTweetById(origTweetId.toInt)
+      val origTweet = tweets.find(_.id == params("id").toInt).getOrElse(throw HTTPException(400, "Wrong format id"))
       val tweet = new Tweet(
         owner = me, text = text,
-        origTweet = origTweet,
-        mentioned = List(origTweet.get.owner)
+        origTweet = Option(origTweet),
+        mentioned = List(origTweet.owner)
       )
       tweets = tweet :: tweets
       response(Tweet.map(tweet))
@@ -147,7 +147,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   //
   get("/feed") {
     val me = auth()
-    
+
   }
 
   //
