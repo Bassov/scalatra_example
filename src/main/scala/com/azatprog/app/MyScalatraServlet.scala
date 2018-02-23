@@ -188,6 +188,11 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   post("/logout") {
-
+    val token = params.get("token").get
+    val nickname = parseTokenAndGetValue(token, "nickname")
+    val user = users.find(u => u.nickname == nickname).get.copy(salt = genSalt())
+    users = users.filterNot(u => u.nickname == nickname)
+    users = user :: users
+    response(Map())
   }
 }
