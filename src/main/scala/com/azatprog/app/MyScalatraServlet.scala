@@ -1,5 +1,7 @@
 package com.azatprog.app
 
+import java.util.Date
+
 import models._
 import org.scalatra._
 // JSON-related libraries
@@ -68,6 +70,22 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // tweet the tweet
   post("/tweets") {
 
+    // TODO verification by token
+    val tweetForm = parsedBody.extract[TweetForm]
+
+    val owner = UserData.getUserById(tweetForm.owner)
+    if (owner.isEmpty) {
+      halt(505)
+    }
+
+    var origTweet = Option[Tweet](null)
+    if (tweetForm.origTweet.isDefined) {
+      origTweet = TweetData.all.find(_.id == tweetForm.origTweet.get)
+    }
+    val tweet = Tweet(1, owner.get, new Date(), tweetForm.text,
+      List(), List(), List(), origTweet)
+    TweetData.all = tweet :: TweetData.all
+    tweet
   }
 
   // get one tweet
