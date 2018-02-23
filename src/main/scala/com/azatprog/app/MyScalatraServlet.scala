@@ -1,7 +1,5 @@
 package com.azatprog.app
 
-import java.util.Date
-
 import models._
 import org.scalatra._
 // JSON-related libraries
@@ -32,8 +30,16 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       response(500, e.getLocalizedMessage)
   }
 
-  private var users = List[User]()
-  private var tweets = List[Tweet]()
+  private var users = List(
+    User(email = "dilyis@email.com", nickname = "dilyis", password = "xxx"),
+    User(email = "mitya@email.com", nickname = "mitya", password = "xxx"),
+    User(email = "azatprog@email.com", nickname = "azatprog", password = "xxx"),
+  )
+  private var tweets = List(
+    Tweet(owner = users.head, text = "Hey"),
+    Tweet(owner = users.head, text = "Ho"),
+    Tweet(owner = users.head, text = "Let's go!")
+  )
 
   private def genSalt() = java.util.UUID.randomUUID.toString
 
@@ -141,7 +147,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   //
   get("/feed") {
     val me = auth()
-
+    
   }
 
   //
@@ -156,12 +162,15 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
     }
   }
+
   // get user tweets
   get("/users/:id/tweets") {
     val me = auth()
     val userId = params.getOrElse("id", throw HTTPException(400, "Missing parameter id"))
     try {
-      val user = users.find(_.id == userId.toInt).getOrElse(throw HTTPException(400, "The user with such id is not found"))
+      val user = users
+        .find(_.id == userId.toInt)
+        .getOrElse(throw HTTPException(400, "The user with such id is not found"))
       val userTweets = tweets.filter(t => t.owner.id == userId.toInt)
       response(userTweets.map(Tweet.map))
     } catch {
@@ -173,7 +182,9 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     val me = auth()
     val userId = params.getOrElse("id", throw HTTPException(400, "Missing parameter id"))
     try {
-      val user = users.find(_.id == userId.toInt).getOrElse(throw HTTPException(400, "The user with such id is not found"))
+      val user = users
+        .find(_.id == userId.toInt)
+        .getOrElse(throw HTTPException(400, "The user with such id is not found"))
       val subs = user :: me.subscriptions.filterNot(_ == user)
       users = me.copy(subscriptions = subs) :: users.filterNot(_ == me)
       response()
@@ -186,7 +197,9 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     val me = auth()
     val userId = params.getOrElse("id", throw HTTPException(400, "Missing parameter id"))
     try {
-      val user = users.find(_.id == userId.toInt).getOrElse(throw HTTPException(400, "The user with such id is not found"))
+      val user = users
+        .find(_.id == userId.toInt)
+        .getOrElse(throw HTTPException(400, "The user with such id is not found"))
       val subs = me.subscriptions.filterNot(_ == user)
       users = me.copy(subscriptions = subs) :: users.filterNot(_ == me)
       response()
@@ -215,7 +228,9 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   post("/login") {
     val nickname = params.getOrElse("nickname", throw HTTPException(400, "Missing parameter nickname"))
     val password = params.getOrElse("password", throw HTTPException(400, "Missing parameter password"))
-    val user = users.find(u => u.nickname == nickname && u.password == password).getOrElse(throw HTTPException(400, "User not exist or password incorrect"))
+    val user = users
+      .find(u => u.nickname == nickname && u.password == password)
+      .getOrElse(throw HTTPException(400, "User not exist or password incorrect"))
 
     val (token, salt) = genToken(user.nickname)
     users = user.copy(salt = salt) :: users.filterNot(u => u.nickname == user.nickname)

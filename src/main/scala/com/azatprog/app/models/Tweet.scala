@@ -21,19 +21,3 @@ object Tweet {
     "dislikes" -> t.dislikes.map(User.shortMap)
   )
 }
-
-object TweetData {
-
-  var all = List(
-    Tweet(owner = UserData.getAllUsers.head, text = "Hey"),
-    Tweet(owner = UserData.getAllUsers.head, text = "Ho"),
-    Tweet(owner = UserData.getAllUsers.head, text = "Let's go!")
-  )
-
-  def getAllTweets: List[Tweet] = all
-
-  def getTweetById(id: Int): Option[Tweet] = all.find(_.id == id)
-
-  def getTweetsByOwner(owner: User): List[Tweet] = all.filter(_.owner == owner)
-
-}

@@ -22,19 +22,3 @@ object User {
     "nickname" -> u.nickname
   )
 }
-
-object UserData {
-
-  var all = List(
-    User(email = "dilyis@email.com", nickname = "dilyis", password = "xxx"),
-    User(email = "mitya@email.com", nickname = "mitya", password = "xxx"),
-    User(email = "azatprog@email.com", nickname = "azatprog", password = "xxx"),
-  )
-
-  def getAllUsers: List[User] = all
-
-  def getUserById(id: Int): Option[User] = all.find(_.id == id)
-
-  def getUserByLogin(nickname: String): Option[User] = all.find(_.nickname == nickname)
-
-}
