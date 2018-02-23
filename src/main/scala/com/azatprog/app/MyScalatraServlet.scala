@@ -163,7 +163,18 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   }
   // get user tweets
   get("/users/:id/tweets") {
-
+    val userId = params.get("id")
+    if (userId.isDefined) {
+      val user = users.find(u => u.id == userId.get.toInt)
+      if (user.isDefined) {
+        val userTweets = tweets.filter(t => t.owner.id == userId.get.toInt)
+        response(userTweets)
+      } else {
+        response(404, "The user with such id is not found")
+      }
+    } else {
+      response(404, "User id is missing")
+    }
   }
 
   post("/users/:id/subscribe") {
