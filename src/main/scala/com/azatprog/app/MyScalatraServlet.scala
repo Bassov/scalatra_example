@@ -168,7 +168,17 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // AUTH
   //
   post("/register") {
-
+    val nickname = params.get("nickname")
+    val email = params.get("email")
+    val password = params.get("password")
+    if (nickname.isEmpty || email.isEmpty || password.isEmpty ) {
+      response(404, "One of the parameters is missing: nickname, email, password")
+    } else {
+      val (token, salt) = genToken(nickname.get)
+      val newUser = User(email = email.get, nickname = nickname.get, password = password.get, salt = salt, subscriptions = List())
+      users = newUser :: users
+      response(Map("token"-> token))
+    }
   }
 
   post("/login") {
