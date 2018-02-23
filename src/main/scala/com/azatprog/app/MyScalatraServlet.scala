@@ -33,9 +33,9 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   private var tweets: List[Tweet] = List()
 
   if (DEBUG) (() => {
-    val azatprog = User(id = 0, email = "azatprog@email.com", nickname = "azatprog", password = "xxx")
-    val dilyis = User(id = 1, email = "dilyis@email.com", nickname = "dilyis", password = "xxx", subscriptions = List(azatprog))
-    val mitya = User(id = 2, email = "mitya@email.com", nickname = "mitya", password = "xxx", subscriptions = List(azatprog, dilyis))
+    val azatprog = User(id = 0, email = "azatprog@email.com", nickname = "azatprog", password = "xxx", salt = genSalt())
+    val dilyis = User(id = 1, email = "dilyis@email.com", nickname = "dilyis", password = "xxx", salt = genSalt(), subscriptions = List(azatprog))
+    val mitya = User(id = 2, email = "mitya@email.com", nickname = "mitya", password = "xxx", salt = genSalt(), subscriptions = List(azatprog, dilyis))
     users = List(azatprog, dilyis, mitya)
     tweets = List(
       Tweet(id = 0, owner = azatprog, text = "Hey"),
@@ -48,7 +48,10 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
 
   private def genToken(nickname: String): (String, String) = {
     val header = JwtHeader("HS256")
-    val claimsSet = JwtClaimsSet(Map("nickname" -> nickname, "createTime" -> System.currentTimeMillis() / 1000))
+    val claimsSet = JwtClaimsSet(Map(
+      "nickname" -> nickname,
+      "createTime" -> (if (DEBUG) 0 else System.currentTimeMillis() / 1000)
+    ))
     val salt = genSalt()
     val jwt: String = JsonWebToken(header, claimsSet, salt)
     (jwt, salt)
