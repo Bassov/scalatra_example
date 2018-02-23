@@ -25,5 +25,10 @@ object TweetData {
     Tweet(1, UserData.getUserById(1).get, new Date(), "Hi",
       List(), List(), List(), None)
   )
+  def getAllTweets: List[Tweet] = all
+
+  def getTweetById(id: Int): Option[Tweet] = all.find(_.id == id)
+
+  def getTweetsByOwner(owner: User): List[Tweet] = all.filter(_.owner == owner)
 
 }

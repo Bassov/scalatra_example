@@ -80,7 +80,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
 
     var origTweet = Option[Tweet](null)
     if (tweetForm.origTweet.isDefined) {
-      origTweet = TweetData.all.find(_.id == tweetForm.origTweet.get)
+      origTweet = TweetData.getTweetById(tweetForm.origTweet.get)
     }
     val tweet = Tweet(1, owner.get, new Date(), tweetForm.text,
       List(), List(), List(), origTweet)
