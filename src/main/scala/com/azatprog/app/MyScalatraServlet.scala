@@ -184,7 +184,15 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
 
   post("/users/:id/unsubscribe") {
     val me = auth()
-
+    val userId = params.getOrElse("id", throw HTTPException(400, "Missing parameter id"))
+    try {
+      val user = users.find(_.id == userId.toInt).getOrElse(throw HTTPException(400, "The user with such id is not found"))
+      val subs = me.subscriptions.filterNot(_ == user)
+      users = me.copy(subscriptions = subs) :: users.filterNot(_ == me)
+      response()
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+    }
   }
 
   //
