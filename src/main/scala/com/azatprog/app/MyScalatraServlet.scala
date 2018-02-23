@@ -126,9 +126,10 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   post("/tweets/:id/retweet") {
     val me = auth()
     val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
-    val origTweetId = params.getOrElse("origTweet", throw HTTPException(400, "Missing parameter origTweet"))
     try {
-      val origTweet = tweets.find(_.id == params("id").toInt).getOrElse(throw HTTPException(400, "Wrong format id"))
+      val origTweet = tweets
+        .find(_.id == params("id").toInt)
+        .getOrElse(throw HTTPException(400, "Wrong format id"))
       val tweet = new Tweet(
         owner = me, text = text,
         origTweet = Option(origTweet),
