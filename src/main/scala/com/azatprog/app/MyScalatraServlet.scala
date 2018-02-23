@@ -93,9 +93,14 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     tweet
   }
 
+  def response(data: Any) = Map("code" -> 200, "data" -> data)
+
+  def response(code: Int, error: String) = Map("code" -> code, "error" -> error)
+
   // get one tweet
   get("/tweets/:id") {
     //    params.getOrElse("id", halt(400)).toInt
+
   }
 
   // edit tweet
