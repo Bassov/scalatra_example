@@ -229,7 +229,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       .flatMap(sub => tweets.filter(t => t.owner.id == sub.id))
       .sortBy(_.date)
     response(Map(
-      "feed" -> feed
+      "feed" -> feed.map(Tweet.map)
     ))
   }
 
