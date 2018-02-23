@@ -83,7 +83,8 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   get("/tweets/:id") {
     val me = auth()
     try {
-      val tweet = tweets.find(_.id == params("id").toInt).getOrElse(throw HTTPException(400, "Wrong format id"))
+      val tweetId = params("id").toInt
+      val tweet = tweets.find(_.id == tweetId).getOrElse(throw HTTPException(400, "Wrong format id"))
       response(Tweet.map(tweet))
     } catch {
       case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
@@ -95,11 +96,12 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     val me = auth()
     val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
     try {
+      val tweetId = params("id").toInt
       val tweet = tweets
-        .find(t => t.id == params("id").toInt && t.owner.id == me.id)
+        .find(t => t.id == tweetId && t.owner.id == me.id)
         .getOrElse(throw HTTPException(400, "You are not the owner of the tweet"))
       tweets = tweet.copy(text = text) :: tweets.filterNot(_ == tweet)
-      response(Tweet.map(tweet.copy(text = text)))
+      response(Tweet.map(tweets.find(_.id == tweetId).get))
     } catch {
       case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
     }
@@ -170,15 +172,15 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   delete("/tweets/:id") {
     val me = auth()
     try {
+      val tweetId = params("id").toInt
       val tweet = tweets
-        .find(t => t.id == params("id").toInt && t.owner.id == me.id)
+        .find(t => t.id == tweetId && t.owner.id == me.id)
         .getOrElse(throw HTTPException(400, "You are not the owner of the tweet"))
       tweets = tweets.filterNot(t => t == tweet || t.origTweet.getOrElse(None) == tweet)
       response()
     } catch {
       case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
     }
-
   }
 
   //retweet, auto mention of owner
@@ -186,8 +188,9 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     val me = auth()
     val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
     try {
+      val tweetId = params("id").toInt
       val origTweet = tweets
-        .find(_.id == params("id").toInt)
+        .find(_.id == tweetId)
         .getOrElse(throw HTTPException(400, "Wrong format id"))
       val tweet = new Tweet(
         owner = me, text = text,
@@ -225,7 +228,8 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   get("/users/:id") {
     val me = auth()
     try {
-      val user = users.find(_.id == params("id").toInt).getOrElse(throw HTTPException(400, "Wrong format id"))
+      val userId = params("id").toInt
+      val user = users.find(_.id == userId).getOrElse(throw HTTPException(400, "Wrong format id"))
       response(User.map(user))
     } catch {
       case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
@@ -235,10 +239,10 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // get user tweets
   get("/users/:id/tweets") {
     val me = auth()
-    val userId = params.getOrElse("id", throw HTTPException(400, "Missing parameter id"))
     try {
+      val userId = params("id").toInt
       val user = users
-        .find(_.id == userId.toInt)
+        .find(_.id == userId)
         .getOrElse(throw HTTPException(400, "The user with such id is not found"))
       val userTweets = tweets.filter(t => t.owner.id == userId.toInt)
       response(userTweets.map(Tweet.map))
@@ -249,8 +253,8 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
 
   post("/users/:id/subscribe") {
     val me = auth()
-    val userId = params.getOrElse("id", throw HTTPException(400, "Missing parameter id"))
     try {
+      val userId = params("id").toInt
       val user = users
         .find(_.id == userId.toInt)
         .getOrElse(throw HTTPException(400, "The user with such id is not found"))
@@ -264,8 +268,8 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
 
   post("/users/:id/unsubscribe") {
     val me = auth()
-    val userId = params.getOrElse("id", throw HTTPException(400, "Missing parameter id"))
     try {
+      val userId = params("id").toInt
       val user = users
         .find(_.id == userId.toInt)
         .getOrElse(throw HTTPException(400, "The user with such id is not found"))
@@ -285,7 +289,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     val email = params.getOrElse("email", throw HTTPException(400, "Missing parameter email"))
     val password = params.getOrElse("password", throw HTTPException(400, "Missing parameter password"))
     if (users.exists(u => u.email == email || u.nickname == nickname)) {
-      response(400, "User is already exists")
+      throw HTTPException(400, "User is already exists")
     } else {
       val (token, salt) = genToken(nickname)
       val newUser = User(email = email, nickname = nickname, password = password, salt = salt)
