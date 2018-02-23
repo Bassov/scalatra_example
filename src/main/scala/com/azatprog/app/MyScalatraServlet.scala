@@ -79,11 +79,16 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     }
 
     var origTweet = Option[Tweet](null)
+    var mentioned = List[User]()
+    // TODO parse text to know how was mentioned in tweet and add to mentioned
     if (tweetForm.origTweet.isDefined) {
       origTweet = TweetData.getTweetById(tweetForm.origTweet.get)
+      if (origTweet.isDefined) {
+        mentioned = origTweet.get.owner :: mentioned
+      }
     }
     val tweet = Tweet(1, owner.get, new Date(), tweetForm.text,
-      List(), List(), List(), origTweet)
+      mentioned, List(), List(), origTweet)
     TweetData.all = tweet :: TweetData.all
     tweet
   }
