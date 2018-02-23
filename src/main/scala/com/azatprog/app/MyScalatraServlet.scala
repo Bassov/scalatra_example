@@ -66,6 +66,14 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     user
   }
 
+  def parse(text: String): List[User] = {
+    val mentioned = Nil
+    if (text.contains("@")) {
+
+    }
+    mentioned
+  }
+
   //
   // Tweets
   //
@@ -73,7 +81,8 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   post("/tweets") {
     val me = auth()
     val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
-    val tweet = new Tweet(owner = me, text = text)
+    val mentioned = parse(text)
+    val tweet = new Tweet(owner = me, text = text, mentioned = mentioned)
     tweets = tweet :: tweets
     response(Tweet.map(tweet))
   }
@@ -94,12 +103,13 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   put("/tweets/:id") {
     val me = auth()
     val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
+    val mentioned = parse(text)
     try {
       val tweetId = params("id").toInt
       val tweet = tweets
         .find(t => t.id == tweetId && t.owner.id == me.id)
         .getOrElse(throw HTTPException(400, "You are not the owner of the tweet"))
-      tweets = tweet.copy(text = text) :: tweets.filterNot(_ == tweet)
+      tweets = tweet.copy(text = text, mentioned = mentioned) :: tweets.filterNot(_ == tweet)
       response(Tweet.map(tweets.find(_.id == tweetId).get))
     } catch {
       case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
@@ -186,6 +196,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   post("/tweets/:id/retweet") {
     val me = auth()
     val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
+    val mentioned = parse(text)
     try {
       val tweetId = params("id").toInt
       val origTweet = tweets
@@ -194,7 +205,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       val tweet = new Tweet(
         owner = me, text = text,
         origTweet = Option(origTweet),
-        mentioned = List(origTweet.owner)
+        mentioned = origTweet.owner :: mentioned
       )
       tweets = tweet :: tweets
       response(Tweet.map(tweet))
