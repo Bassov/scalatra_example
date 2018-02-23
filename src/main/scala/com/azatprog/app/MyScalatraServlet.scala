@@ -30,16 +30,20 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       response(500, e.getLocalizedMessage)
   }
 
-  private var users = List(
-    User(email = "dilyis@email.com", nickname = "dilyis", password = "xxx"),
-    User(email = "mitya@email.com", nickname = "mitya", password = "xxx"),
-    User(email = "azatprog@email.com", nickname = "azatprog", password = "xxx"),
-  )
-  private var tweets = List(
-    Tweet(owner = users.head, text = "Hey"),
-    Tweet(owner = users.head, text = "Ho"),
-    Tweet(owner = users.head, text = "Let's go!")
-  )
+  private var users: List[User] = _
+  private var tweets: List[Tweet] = _
+
+  init() {
+    val azatprog = User(email = "azatprog@email.com", nickname = "azatprog", password = "xxx")
+    val dilyis = User(email = "dilyis@email.com", nickname = "dilyis", password = "xxx", subscriptions = List(azatprog))
+    val mitya = User(email = "mitya@email.com", nickname = "mitya", password = "xxx", subscriptions = List(azatprog, dilyis))
+    users = List(azatprog, dilyis, mitya)
+    tweets = List(
+      Tweet(owner = azatprog, text = "Hey"),
+      Tweet(owner = dilyis, text = "Ho"),
+      Tweet(owner = mitya, text = "Let's go!")
+    )
+  }
 
   private def genSalt() = java.util.UUID.randomUUID.toString
 
@@ -159,19 +163,29 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   //
   get("/feed") {
     val me = auth()
-
+    val feed = me.subscriptions
+      .flatMap(sub => tweets.filter(t => t.owner.id == sub.id))
+      .sortBy(_.date)
+    response(Map(
+      "feed" -> feed
+    ))
   }
 
   //
   // USERS
   //
+  get("/users") {
+    val me = auth()
+    response(users.map(User.shortMap))
+  }
+
   get("/users/:id") {
     val me = auth()
     try {
       val user = users.find(_.id == params("id").toInt).getOrElse(throw HTTPException(400, "Wrong format id"))
       response(User.map(user))
     } catch {
-      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
     }
   }
 
