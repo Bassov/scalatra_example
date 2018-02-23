@@ -17,9 +17,6 @@ import authentikat.jwt.JsonWebToken
 class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
-  before() {
-    contentType = formats("json")
-  }
 
   private var users = List[User]()
   private var tweets = List[Tweet]()
@@ -32,36 +29,6 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     val salt = genSalt()
     val jwt: String = JsonWebToken(header, claimsSet, salt)
     (jwt, salt)
-  }
-
-  private def isValidToken(jwt: String, salt: String): Boolean = {
-    JsonWebToken.validate(jwt, salt)
-  }
-
-  private def auth(token: String) {
-    val nickname = parseTokenAndGetValue(token, "nickname")
-    if (!isValidToken(token, "asd")) {
-      halt(401)
-    }
-    nickname
-  }
-
-  private def parseTokenAndGetValue(jwt: String, key: String): String = {
-    val claims: Option[Map[String, String]] = jwt match {
-      case JsonWebToken(header, claimsSet, signature) =>
-        claimsSet.asSimpleMap.toOption
-      case x =>
-        None
-    }
-    val parsedToken: Map[String, String] = claims match {
-      case Some(value) => value
-      case _ => Map.empty
-    }
-    if (parsedToken.isEmpty) {
-      ""
-    } else {
-      parsedToken(key)
-    }
   }
 
   //
@@ -97,9 +64,35 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
 
   def response(code: Int, error: String) = Map("code" -> code, "error" -> error)
 
+  error {
+    case HTTPException(code, msg) => response(code, msg)
+    case e: Throwable =>
+      response(500, e.getLocalizedMessage)
+  }
+
+  // Находясь в здравом уме и трезвой памяти,
+  // осознаём какая дичь тут написана, но лучше решение не гуглиться
+  // сорян за боль и слёзы
+  var currentUser: User = _
+
+  before("""^\/(?!(?:register|login)).*""".r) {
+    contentType = formats("json")
+    val token = params.getOrElse("token", throw HTTPException(401, "Unauthorized, token parameter is missing"))
+    val jwt = JsonWebToken.unapply(token).getOrElse(throw HTTPException(400, "Invalid token parameter"))
+    val nickname = jwt._2.asSimpleMap.toOption
+      .getOrElse(throw HTTPException(400, "Invalid token parameter"))
+      .getOrElse("nickname", throw HTTPException(400, "Invalid token parameter"))
+    val user = users.find(u => u.nickname == nickname).getOrElse(throw HTTPException(400, "Invalid token parameter"))
+    if (!JsonWebToken.validate(token, user.salt))
+      throw HTTPException(400, "Invalid token parameter")
+    currentUser = user
+  }
+  after() {
+    currentUser = _
+  }
+
   // get one tweet
   get("/tweets/:id") {
-    //    params.getOrElse("id", halt(400)).toInt
 
   }
 
@@ -205,7 +198,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   post("/login") {
-    
+
   }
 
   post("/logout") {
