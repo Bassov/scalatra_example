@@ -18,8 +18,18 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
 
+  def response(data: Any = Map()) = Map("code" -> 200, "data" -> data)
+
+  def response(code: Int, error: String) = Map("code" -> code, "error" -> error)
+
   before() {
     contentType = formats("json")
+  }
+
+  error {
+    case HTTPException(code, msg) => response(code, msg)
+    case e: Throwable =>
+      response(500, e.getLocalizedMessage)
   }
 
   private var users = List[User]()
@@ -35,28 +45,6 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     (jwt, salt)
   }
 
-  //
-  // Tweets
-  //
-  // tweet the tweet
-  post("/tweets") {
-    val me = auth()
-    val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
-    val tweet = new Tweet(owner = me, text = text)
-    tweets = tweet :: tweets
-    response(Tweet.map(tweet))
-  }
-
-  def response(data: Any = Map()) = Map("code" -> 200, "data" -> data)
-
-  def response(code: Int, error: String) = Map("code" -> code, "error" -> error)
-
-  error {
-    case HTTPException(code, msg) => response(code, msg)
-    case e: Throwable =>
-      response(500, e.getLocalizedMessage)
-  }
-
   def auth(): User = {
     val token = params.getOrElse("token", throw HTTPException(401, "Unauthorized, token parameter is missing"))
     val jwt = JsonWebToken.unapply(token).getOrElse(throw HTTPException(400, "Invalid token parameter"))
@@ -67,6 +55,18 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     if (!JsonWebToken.validate(token, user.salt))
       throw HTTPException(400, "Invalid token parameter")
     user
+  }
+
+  //
+  // Tweets
+  //
+  // tweet the tweet
+  post("/tweets") {
+    val me = auth()
+    val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
+    val tweet = new Tweet(owner = me, text = text)
+    tweets = tweet :: tweets
+    response(Tweet.map(tweet))
   }
 
   // get one tweet
