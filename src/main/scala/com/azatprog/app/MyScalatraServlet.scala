@@ -33,7 +33,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   private var users: List[User] = _
   private var tweets: List[Tweet] = _
 
-  init() {
+  (() => {
     val azatprog = User(email = "azatprog@email.com", nickname = "azatprog", password = "xxx")
     val dilyis = User(email = "dilyis@email.com", nickname = "dilyis", password = "xxx", subscriptions = List(azatprog))
     val mitya = User(email = "mitya@email.com", nickname = "mitya", password = "xxx", subscriptions = List(azatprog, dilyis))
@@ -43,7 +43,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       Tweet(owner = dilyis, text = "Ho"),
       Tweet(owner = mitya, text = "Let's go!")
     )
-  }
+  }) ()
 
   private def genSalt() = java.util.UUID.randomUUID.toString
 
@@ -86,7 +86,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       val tweet = tweets.find(_.id == params("id").toInt).getOrElse(throw HTTPException(400, "Wrong format id"))
       response(Tweet.map(tweet))
     } catch {
-      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
     }
   }
 
@@ -109,25 +109,61 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // like tweet, dont foget to remove dislike
   put("/tweets/:id/like") {
     val me = auth()
-
+    try {
+      val tweetId = params("id").toInt
+      val tweet = tweets.find(_.id == tweetId).getOrElse(throw HTTPException(404, "Tweet not found"))
+      tweets = tweet
+        .copy(likes = me :: tweet.likes.filterNot(_ == me), dislikes = tweet.dislikes.filterNot(_ == me)) ::
+        tweets.filterNot(_ == tweet)
+      response(Tweet.map(tweets.find(_.id == tweetId).get))
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
+    }
   }
 
   // remove like from tweet
   delete("/tweets/:id/like") {
     val me = auth()
-
+    try {
+      val tweetId = params("id").toInt
+      val tweet = tweets.find(_.id == tweetId).getOrElse(throw HTTPException(404, "Tweet not found"))
+      tweets = tweet
+        .copy(likes = tweet.likes.filterNot(_ == me), dislikes = tweet.dislikes.filterNot(_ == me)) ::
+        tweets.filterNot(_ == tweet)
+      response(Tweet.map(tweets.find(_.id == tweetId).get))
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
+    }
   }
 
   // dislike tweet, dont foget to remove like
   put("/tweets/:id/dislike") {
     val me = auth()
-
+    try {
+      val tweetId = params("id").toInt
+      val tweet = tweets.find(_.id == tweetId).getOrElse(throw HTTPException(404, "Tweet not found"))
+      tweets = tweet
+        .copy(likes = tweet.likes.filterNot(_ == me), dislikes = me :: tweet.dislikes.filterNot(_ == me)) ::
+        tweets.filterNot(_ == tweet)
+      response(Tweet.map(tweets.find(_.id == tweetId).get))
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
+    }
   }
 
   // remove dislike from tweet
   delete("/tweets/:id/dislike") {
     val me = auth()
-
+    try {
+      val tweetId = params("id").toInt
+      val tweet = tweets.find(_.id == tweetId).getOrElse(throw HTTPException(404, "Tweet not found"))
+      tweets = tweet
+        .copy(likes = tweet.likes.filterNot(_ == me), dislikes = tweet.dislikes.filterNot(_ == me)) ::
+        tweets.filterNot(_ == tweet)
+      response(Tweet.map(tweets.find(_.id == tweetId).get))
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
+    }
   }
 
   // delete, dont forget to delete retweets
@@ -163,7 +199,6 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     } catch {
       case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
     }
-
   }
 
   //
