@@ -2,10 +2,7 @@ package com.azatprog.app
 
 import models._
 import org.scalatra._
-// JSON-related libraries
 import org.json4s.{DefaultFormats, Formats}
-
-// JSON handling support from Scalatra
 import org.scalatra.json._
 
 import authentikat.jwt.JwtHeader
@@ -13,6 +10,8 @@ import authentikat.jwt.JwtClaimsSet
 import authentikat.jwt.JsonWebToken
 
 class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
+
+  val DEBUG = true
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
 
@@ -45,7 +44,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     )
   }) ()
 
-  private def genSalt() = java.util.UUID.randomUUID.toString
+  private def genSalt() = if (DEBUG) "it's only for create postman autotests!" else java.util.UUID.randomUUID.toString
 
   private def genToken(nickname: String): (String, String) = {
     val header = JwtHeader("HS256")
