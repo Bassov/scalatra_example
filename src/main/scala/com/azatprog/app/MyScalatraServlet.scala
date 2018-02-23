@@ -40,28 +40,11 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   //
   // tweet the tweet
   post("/tweets") {
-
-    // TODO verification by token
-    val tweetForm = parsedBody.extract[TweetForm]
-
-    val owner = UserData.getUserById(tweetForm.owner)
-    if (owner.isEmpty) {
-      halt(505)
-    }
-
-    var origTweet = Option[Tweet](null)
-    var mentioned = List[User]()
-    // TODO parse text to know how was mentioned in tweet and add to mentioned
-    if (tweetForm.origTweet.isDefined) {
-      origTweet = TweetData.getTweetById(tweetForm.origTweet.get)
-      if (origTweet.isDefined) {
-        mentioned = origTweet.get.owner :: mentioned
-      }
-    }
-    val tweet = Tweet(1, owner.get, new Date(), tweetForm.text,
-      mentioned, List(), List(), origTweet)
-    TweetData.all = tweet :: TweetData.all
-    tweet
+    val me = auth()
+    val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
+    val tweet = new Tweet(owner = me, text = text)
+    tweets = tweet :: tweets
+    response(Tweet.map(tweet))
   }
 
   def response(data: Any = Map()) = Map("code" -> 200, "data" -> data)
@@ -136,6 +119,20 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   //retweet, auto mention of owner
   post("/tweets/:id/retweet") {
     val me = auth()
+    val text = params.getOrElse("text", throw HTTPException(400, "Missing parameter text"))
+    val origTweetId = params.getOrElse("origTweet", throw HTTPException(400, "Missing parameter origTweet"))
+    try {
+      val origTweet = TweetData.getTweetById(origTweetId.toInt)
+      val tweet = new Tweet(
+        owner = me, text = text,
+        origTweet = origTweet,
+        mentioned = List(origTweet.get.owner)
+      )
+      tweets = tweet :: tweets
+      response(Tweet.map(tweet))
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+    }
 
   }
 
