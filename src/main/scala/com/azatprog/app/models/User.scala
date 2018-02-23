@@ -6,7 +6,7 @@ case class User(
                  nickname: String,
                  password: String,
                  salt: String,
-                 subscriptions: List[User]
+                 subscriptions: List[User] = List()
                )
 
 object UserData {

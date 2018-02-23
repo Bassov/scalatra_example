@@ -18,6 +18,10 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats
 
+  before() {
+    contentType = formats("json")
+  }
+
   private var users = List[User]()
   private var tweets = List[Tweet]()
 
@@ -70,13 +74,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       response(500, e.getLocalizedMessage)
   }
 
-  // Находясь в здравом уме и трезвой памяти,
-  // осознаём какая дичь тут написана, но лучше решение не гуглиться
-  // сорян за боль и слёзы
-  var currentUser: User = _
-
-  before("""^\/(?!(?:register|login)).*""".r) {
-    contentType = formats("json")
+  def auth(): User = {
     val token = params.getOrElse("token", throw HTTPException(401, "Unauthorized, token parameter is missing"))
     val jwt = JsonWebToken.unapply(token).getOrElse(throw HTTPException(400, "Invalid token parameter"))
     val nickname = jwt._2.asSimpleMap.toOption
@@ -85,49 +83,54 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     val user = users.find(u => u.nickname == nickname).getOrElse(throw HTTPException(400, "Invalid token parameter"))
     if (!JsonWebToken.validate(token, user.salt))
       throw HTTPException(400, "Invalid token parameter")
-    currentUser = user
-  }
-  after() {
-    currentUser = _
+    user
   }
 
   // get one tweet
   get("/tweets/:id") {
+    val me = auth()
 
   }
 
   // edit tweet
   put("/tweets/:id") {
+    val me = auth()
 
   }
 
   // like tweet, dont foget to remove dislike
   put("/tweets/:id/like") {
+    val me = auth()
 
   }
 
   // remove like from tweet
   delete("/tweets/:id/like") {
+    val me = auth()
 
   }
 
   // dislike tweet, dont foget to remove like
   put("/tweets/:id/dislike") {
+    val me = auth()
 
   }
 
   // remove dislike from tweet
   delete("/tweets/:id/dislike") {
+    val me = auth()
 
   }
 
   // delete, dont forget to delete retweets
   delete("/tweets/:id") {
+    val me = auth()
 
   }
 
   //retweet, auto mention of owner
   post("/tweets/:id/retweet") {
+    val me = auth()
 
   }
 
@@ -135,6 +138,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // FEED
   //
   get("/feed") {
+    val me = auth()
 
   }
 
@@ -142,6 +146,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // USERS
   //
   get("/users/:id") {
+    val me = auth()
     val userId = params.get("id")
     if (userId.isDefined) {
       val user = users.find(u => u.id == userId.get.toInt)
@@ -156,6 +161,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   }
   // get user tweets
   get("/users/:id/tweets") {
+    val me = auth()
     val userId = params.get("id")
     if (userId.isDefined) {
       val user = users.find(u => u.id == userId.get.toInt)
@@ -171,10 +177,12 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   post("/users/:id/subscribe") {
+    val me = auth()
 
   }
 
   post("/users/:id/unsubscribe") {
+    val me = auth()
 
   }
 
@@ -182,31 +190,33 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // AUTH
   //
   post("/register") {
-    val nickname = params.get("nickname")
-    val email = params.get("email")
-    val password = params.get("password")
-    if (nickname.isEmpty || email.isEmpty || password.isEmpty ) {
-      response(404, "One of the parameters is missing: nickname, email, password")
-    } else if (users.exists( u => u.email == email.get || u.nickname == nickname.get)) {
-        response(400, "The user is already exists")
-      }else{
-        val (token, salt) = genToken(nickname.get)
-        val newUser = User(email = email.get, nickname = nickname.get, password = password.get, salt = salt, subscriptions = List())
-        users = newUser :: users
-        response(Map("token"-> token))
+    val nickname = params.getOrElse("nickname", throw HTTPException(400, "Missing parameter nickname"))
+    val email = params.getOrElse("email", throw HTTPException(400, "Missing parameter email"))
+    val password = params.getOrElse("password", throw HTTPException(400, "Missing parameter password"))
+    if (users.exists(u => u.email == email || u.nickname == nickname)) {
+      response(400, "User is already exists")
+    } else {
+      val (token, salt) = genToken(nickname)
+      val newUser = User(email = email, nickname = nickname, password = password, salt = salt)
+      users = newUser :: users
+      response(Map("token" -> token))
     }
   }
 
   post("/login") {
+    val nickname = params.getOrElse("nickname", throw HTTPException(400, "Missing parameter nickname"))
+    val password = params.getOrElse("password", throw HTTPException(400, "Missing parameter password"))
+    val user = users.find(u => u.nickname == nickname && u.password == password).getOrElse(throw HTTPException(400, "User not exist or password incorrect"))
 
+    val (token, salt) = genToken(user.nickname)
+    users = user.copy(salt = salt) :: users.filterNot(u => u.nickname == user.nickname)
+    response(Map("token" -> token))
   }
 
   post("/logout") {
-    val token = params.get("token").get
-    val nickname = parseTokenAndGetValue(token, "nickname")
-    val user = users.find(u => u.nickname == nickname).get.copy(salt = genSalt())
-    users = users.filterNot(u => u.nickname == nickname)
-    users = user :: users
+    val me = auth()
+    users = users.filterNot(u => u.nickname == me.nickname)
+    users = me.copy(salt = genSalt()) :: users
     response(Map())
   }
 }
