@@ -29,18 +29,18 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       response(500, e.getLocalizedMessage)
   }
 
-  private var users: List[User] = _
-  private var tweets: List[Tweet] = _
+  private var users: List[User] = List()
+  private var tweets: List[Tweet] = List()
 
-  (() => {
-    val azatprog = User(email = "azatprog@email.com", nickname = "azatprog", password = "xxx")
-    val dilyis = User(email = "dilyis@email.com", nickname = "dilyis", password = "xxx", subscriptions = List(azatprog))
-    val mitya = User(email = "mitya@email.com", nickname = "mitya", password = "xxx", subscriptions = List(azatprog, dilyis))
+  if (DEBUG) (() => {
+    val azatprog = User(id = 0, email = "azatprog@email.com", nickname = "azatprog", password = "xxx")
+    val dilyis = User(id = 1, email = "dilyis@email.com", nickname = "dilyis", password = "xxx", subscriptions = List(azatprog))
+    val mitya = User(id = 2, email = "mitya@email.com", nickname = "mitya", password = "xxx", subscriptions = List(azatprog, dilyis))
     users = List(azatprog, dilyis, mitya)
     tweets = List(
-      Tweet(owner = azatprog, text = "Hey"),
-      Tweet(owner = dilyis, text = "Ho"),
-      Tweet(owner = mitya, text = "Let's go!")
+      Tweet(id = 0, owner = azatprog, text = "Hey"),
+      Tweet(id = 1, owner = dilyis, text = "Ho"),
+      Tweet(id = 2, owner = mitya, text = "Let's go!")
     )
   }) ()
 
@@ -114,7 +114,6 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     } catch {
       case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
     }
-
   }
 
   // like tweet, dont foget to remove dislike
@@ -188,7 +187,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       tweets = tweets.filterNot(t => t == tweet || t.origTweet.getOrElse(None) == tweet)
       response()
     } catch {
-      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
     }
   }
 
@@ -210,7 +209,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       tweets = tweet :: tweets
       response(Tweet.map(tweet))
     } catch {
-      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
     }
   }
 
@@ -257,7 +256,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       val userTweets = tweets.filter(t => t.owner.id == userId.toInt)
       response(userTweets.map(Tweet.map))
     } catch {
-      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
     }
   }
 
@@ -272,7 +271,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       users = me.copy(subscriptions = subs) :: users.filterNot(_ == me)
       response()
     } catch {
-      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
     }
   }
 
@@ -287,7 +286,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
       users = me.copy(subscriptions = subs) :: users.filterNot(_ == me)
       response()
     } catch {
-      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+      case _: NumberFormatException => throw HTTPException(400, "Wrong id format")
     }
   }
 
