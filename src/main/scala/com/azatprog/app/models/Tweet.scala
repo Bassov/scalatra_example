@@ -1,7 +1,5 @@
 package com.azatprog.app.models
 
-import java.util.Date
-
 case class Tweet(
                   id: Int = java.util.UUID.randomUUID.hashCode(),
                   owner: User,
@@ -26,7 +24,11 @@ object Tweet {
 
 object TweetData {
 
-  var all = List(Tweet(owner = UserData.getUserById(1).get, text = "Hi"))
+  var all = List(
+    Tweet(owner = UserData.getAllUsers.head, text = "Hey"),
+    Tweet(owner = UserData.getAllUsers.head, text = "Ho"),
+    Tweet(owner = UserData.getAllUsers.head, text = "Let's go!")
+  )
 
   def getAllTweets: List[Tweet] = all
 

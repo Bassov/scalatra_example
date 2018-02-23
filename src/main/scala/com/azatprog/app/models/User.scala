@@ -5,7 +5,7 @@ case class User(
                  email: String,
                  nickname: String,
                  password: String,
-                 salt: String,
+                 salt: String = java.util.UUID.randomUUID.toString,
                  subscriptions: List[User] = List()
                )
 
@@ -26,7 +26,9 @@ object User {
 object UserData {
 
   var all = List(
-    User(1, "email", "dilyis", "xxx", "123", List())
+    User(email = "dilyis@email.com", nickname = "dilyis", password = "xxx"),
+    User(email = "mitya@email.com", nickname = "mitya", password = "xxx"),
+    User(email = "azatprog@email.com", nickname = "azatprog", password = "xxx"),
   )
 
   def getAllUsers: List[User] = all
