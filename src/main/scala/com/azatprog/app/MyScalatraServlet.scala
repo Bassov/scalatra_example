@@ -67,9 +67,16 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   }
 
   def parse(text: String): List[User] = {
-    val mentioned = Nil
-    if (text.contains("@")) {
-
+    var mentioned = List[User]()
+    val words = text.split(" ")
+    for (w <- words) {
+      if (w.startsWith("@")) {
+        val user = users
+          .find(u => u.nickname == w.substring(1))
+        if (user.isDefined) {
+          mentioned = user.get :: mentioned
+        }
+      }
     }
     mentioned
   }
