@@ -162,17 +162,13 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // get user tweets
   get("/users/:id/tweets") {
     val me = auth()
-    val userId = params.get("id")
-    if (userId.isDefined) {
-      val user = users.find(u => u.id == userId.get.toInt)
-      if (user.isDefined) {
-        val userTweets = tweets.filter(t => t.owner.id == userId.get.toInt)
-        response(userTweets)
-      } else {
-        response(404, "The user with such id is not found")
-      }
-    } else {
-      response(404, "User id is missing")
+    val userId = params.getOrElse("id", throw HTTPException(400, "Missing parameter id"))
+    try {
+      val user = users.find(_.id == userId.toInt).getOrElse(throw HTTPException(400, "The user with such id is not found"))
+      val userTweets = tweets.filter(t => t.owner.id == userId.toInt)
+      response(userTweets)
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
     }
   }
 
