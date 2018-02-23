@@ -89,7 +89,12 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // get one tweet
   get("/tweets/:id") {
     val me = auth()
-
+    try {
+      val tweet = tweets.find(_.id == params("id").toInt).getOrElse(throw HTTPException(400, "Wrong format id"))
+      response(Tweet.map(tweet))
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+    }
   }
 
   // edit tweet
@@ -147,16 +152,11 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   //
   get("/users/:id") {
     val me = auth()
-    val userId = params.get("id")
-    if (userId.isDefined) {
-      val user = users.find(u => u.id == userId.get.toInt)
-      if (user.isDefined) {
-        response(user.get)
-      } else {
-        response(404, "The user with such id is not found")
-      }
-    } else {
-      response(404, "User id is missing")
+    try {
+      val user = users.find(_.id == params("id").toInt).getOrElse(throw HTTPException(400, "Wrong format id"))
+      response(User.map(user))
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
     }
   }
   // get user tweets
@@ -166,7 +166,7 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
     try {
       val user = users.find(_.id == userId.toInt).getOrElse(throw HTTPException(400, "The user with such id is not found"))
       val userTweets = tweets.filter(t => t.owner.id == userId.toInt)
-      response(userTweets)
+      response(userTweets.map(Tweet.map))
     } catch {
       case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
     }
