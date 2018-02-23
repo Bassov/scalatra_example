@@ -133,6 +133,15 @@ class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
   // delete, dont forget to delete retweets
   delete("/tweets/:id") {
     val me = auth()
+    try {
+      val tweet = tweets
+        .find(t => t.id == params("id").toInt && t.owner.id == me.id)
+        .getOrElse(throw HTTPException(400, "You are not the owner of the tweet"))
+      tweets = tweets.filterNot(t => t == tweet || t.origTweet.getOrElse(None) == tweet)
+      response()
+    } catch {
+      case _: NumberFormatException => throw HTTPException(400, "Wrond id format")
+    }
 
   }
 
