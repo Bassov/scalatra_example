@@ -1,16 +1,12 @@
-package com.azatprog.app
+package com.azatprog.app.old_server
 
-import models._
-import org.scalatra._
+import authentikat.jwt.{JsonWebToken, JwtClaimsSet, JwtHeader}
+import com.azatprog.app.models.{Tweet, User}
 import org.json4s.{DefaultFormats, Formats}
+import org.scalatra._
 import org.scalatra.json._
 
-import authentikat.jwt.JwtHeader
-import authentikat.jwt.JwtClaimsSet
-import authentikat.jwt.JsonWebToken
-
 class MyScalatraServlet extends ScalatraServlet with JacksonJsonSupport {
-
   val DEBUG = true
 
   protected implicit lazy val jsonFormats: Formats = DefaultFormats

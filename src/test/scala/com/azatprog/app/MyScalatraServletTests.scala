@@ -1,5 +1,6 @@
 package com.azatprog.app
 
+import com.azatprog.app.old_server.MyScalatraServlet
 import org.scalatra.test.scalatest._
 
 class MyScalatraServletTests extends ScalatraFunSuite {
